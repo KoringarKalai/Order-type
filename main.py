@@ -1,4 +1,5 @@
 import numpy as np
+from scipy import spatial
 import cv2
 
 class Vecteur:
@@ -78,7 +79,7 @@ def genererImage(size, points, nom):
     cv2.imwrite(nom + ".png", image)
 
 # Genere n point repartis de facon aleatoire avec la loi uniforme dans l'intervale [0,size]²
-def gerererUniforme(size, n):
+def genererUniforme(size, n):
     # Liste des points 
     listePoint = []
     # Genere les n points 
@@ -92,7 +93,7 @@ def gerererUniforme(size, n):
     return listePoint
 
 # Genere n point repartis de facon aleatoire avec la loi normale dans l'intervale [0,size]²
-def gerererNormal(size, n):
+def genererNormal(size, n):
     # Liste des points 
     listePoint = []
     # Genere les n points 
@@ -148,25 +149,93 @@ def signature(points):
             for j in range(0,len(lpSorted)):
                 if i + 1 != lpSorted[j].num :
                     mot = mot + " " + str(lpSorted[j].num)
-            mot += "\n"
+            #mot += "\n"
         if minmot > mot:
             minmot = mot
 
     return minmot
     # Actual min 2 3 4 5 1 3 4 5 1 2 4 5 1 3 2 5 1 3 2 4
 
+# Retourne la signature minimale avec l'enveloppe convexe pour les choix de 1 et 2 
+def signatureHull(points):
+    # Initialisation du mot 
+    minmot = "z"
+    
+    # On formate les points pour utiliser la fonction qui trouve l'enveloppe convexe
+    tab = listeToTab(points)
+    # On calcule l'envelope convexe
+    hull = spatial.qhull.ConvexHull(tab)
+    # Pour chaque couple de points consecutif sur l'enveloppe convexe on calcule la signature en triant autour des points 
+    for simplex in hull.simplices:
+        # On recupere les deux points consecutif de l'enveloppe 
+        centre = [points[simplex[0]] , points[simplex[1]]]
+        # On on effectue le trie par rapport a ces deux points 
+        firstSort = triBulle(points, centre)
+        # On renumerote les points 
+        for i in range(0,len(points)):
+            firstSort[i].num = i + 1
+        # On initialise le mot avec le 1er tri
+        mot = ""
+        #for j in range(0,len(firstSort)):
+        #    if 1 != firstSort[j].num :
+        #        mot = mot + " " + str(firstSort[j].num)
+        for i in range(1,len(points)):
+            # On recupere les deux points 
+            centre = [firstSort[i], points[simplex[0]]]
+            # On trie avec les deux points en centre 
+            lpSorted = triBulle(firstSort,centre)
+            # On ecrit la suite du mot 
+            for j in range(0,len(lpSorted)):
+                if i + 1 != lpSorted[j].num :
+                    mot = mot + " " + str(lpSorted[j].num)
+            # Si notre mot est deja moins bien que le plus petit mot on arrete de le calculer
+            if minmot < mot:
+                break
+        # On test si le mot est le plus petit 
+        if minmot > mot:
+            minmot = mot
+    return minmot
+
 # Affiche les coordonee des points
 def printPoints(points):
     for k in range(0,len(points)):
         print("P",points[k].num,": (",points[k].x,",",points[k].y,")")
 
+# Retourne un tableau contenant les points donne dans la forme [xi,yi]
+def listeToTab(points):
+    res = np.array([[0 for x in range(2)] for y in range(len(points))] )
+    for k in range(0,len(points)):
+        res[k] = [points[k].x , points[k].y]
+    return res
 # -------------------------------------------- Main --------------------------------------------------------- #
 
 # Taille des images
-size = 100
+size = 1000
 # Nombre de point a creer
 n = 5
 # Exemple de generation d'une image et de retour de signature 
 lp = genererGinibre(size,n)
 genererImage(size,lp,"Ginibre")
 print(signature(lp))
+print(signatureHull(lp))
+
+map = {}
+for i in range(0,10000) :
+    if i%1000 == 0: 
+        print(i)
+    lp = genererUniforme(size,n)
+    s = signatureHull(lp)
+    if s in map :
+        map[s] = map[s] + 1 
+    else :
+        map[s] = 1 
+
+print(map)
+#TODO 
+# 1. Signature : 
+#       - Calcul enveloppe convexe
+#       - Signature min choix 1 et 2 consecutif sur l'enveloppe convexe
+#       - Verifier la fonction 
+# 2. Faire des stats
+#       - Table de hachage 
+#       - Frequence d'apparition 
