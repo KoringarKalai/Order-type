@@ -17,8 +17,8 @@ def orientation(a,b,c) :
     ac.y = c.y - a.y
     # Determinant de la matrice AB AC 
     z = ab.x * ac.y - ab.y * ac.x
-    if z == 0: 
-        return 0
+    if z < 10 ** -11 and z > -1 * 10 ** -11:
+        return 1
     if z < 0:
         return -1
     else:
@@ -29,11 +29,6 @@ def comparaison(a,b,c,d):
     # Calcul ordre de c et d autour de a en partant de b
     signeABC = orientation(a,b,c)
     signeABD = orientation(a,b,d)
-
-    if signeABC == 0: 
-        return True
-    if signeABD == 0:
-        return False
 
     if signeABC > 0:
         if signeABD > 0: 
@@ -223,7 +218,7 @@ map = {}
 for i in range(0,10000) :
     if i%1000 == 0: 
         print(i)
-    lp = genererUniforme(size,n)
+    lp = genererGinibre(size,n)
     s = signatureHull(lp)
     if s in map :
         map[s] = map[s] + 1 
