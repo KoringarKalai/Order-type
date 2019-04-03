@@ -127,6 +127,25 @@ def genererGinibre(n):
         listePoint.append(p)
     return listePoint
 
+def genererEvolveBruit(size, n, old, bruit):
+    # Liste des points 
+    listePoint = []
+    # Genere les n points 
+    for i in range(0,n):
+        p = old[i]
+        p.x = old[i] + (0.5 - np.random.rand()) * bruit
+        p.y = old[i] + (0.5 - np.random.rand()) * bruit
+
+        p.x = size if p.x > size else p.x
+        p.x = 0 if p.x < 0 else p.x
+
+        p.y = size if p.y > size else p.y
+        p.y = 0 if p.y < 0 else p.y
+
+        listePoint.append(p)
+    # Retour de la liste de points
+    return listePoint
+
 # Retourne la signature minimale du la liste de points points
 def signature(points):
     # Initialisation du mot 
