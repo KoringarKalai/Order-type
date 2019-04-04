@@ -128,8 +128,8 @@ def genererEvolveBruit(size, n, old, bruit):
     # Genere les n points 
     for i in range(0,n):
         p = old[i]
-        p.x = old[i] + (0.5 - np.random.rand()) * bruit
-        p.y = old[i] + (0.5 - np.random.rand()) * bruit
+        p.x = old[i].x + (0.5 - np.random.rand()) * bruit
+        p.y = old[i].y + (0.5 - np.random.rand()) * bruit
 
         p.x = size if p.x > size else p.x
         p.x = 0 if p.x < 0 else p.x
