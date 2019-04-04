@@ -17,6 +17,7 @@ def orientation(a,b,c) :
     ac.y = c.y - a.y
     # Determinant de la matrice AB AC 
     z = ab.x * ac.y - ab.y * ac.x
+    #print(a.x,"\t",a.y,"\t",b.x,"\t",b.y,"\t",c.x,"\t",c.y,"\t",ab.x,"\t",ac.y,"\t",ab.y,"\t",ac.x,"\t",z)
     if z < 10 ** -11 and z > -1 * 10 ** -11:
         return 1
     if z < 0:
@@ -67,43 +68,47 @@ def triBulle(points, centre):
 
 # Genere une image de taille size contenant les points de la liste points
 def genererImage(size, points, nom):
+    pts = points[:]
+    for i in range(0,len(points)):
+        pts[i].x = int(pts[i].x * size / len(points))
+        pts[i].y = int(pts[i].y * size / len(points))
     # Dessine une image noir de taille size
     image = np.zeros((size, size, 3), np.uint8)
-    for i in range(0,len(points)):
-        image[points[i].x,points[i].y] = [255, 255, 255]
+    for i in range(0,len(pts)):
+        image[pts[i].x,pts[i].y] = [255, 255, 255]
     cv2.imwrite(nom + ".png", image)
 
 # Genere n point repartis de facon aleatoire avec la loi uniforme dans l'intervale [0,size]²
-def genererUniforme(size, n):
+def genererUniforme(n):
     # Liste des points 
     listePoint = []
     # Genere les n points 
     for i in range(0,n):
         p = Vecteur()
-        p.x = int(np.random.uniform(0, 1) * size)
-        p.y = int(np.random.uniform(0, 1) * size)
+        p.x = np.random.uniform(0, 1)
+        p.y = np.random.uniform(0, 1)
         p.num = i + 1 
         listePoint.append(p)
     # Retour de la liste de points
     return listePoint
 
 # Genere n point repartis de facon aleatoire avec la loi normale dans l'intervale [0,size]²
-def genererNormal(size, n):
+def genererNormal(n):
     # Liste des points 
     listePoint = []
     # Genere les n points 
     for i in range(0,n):
         p = Vecteur()
-        p.x = int(np.random.normal(0, 1) * size)
-        p.y = int(np.random.normal(0, 1) * size)
+        p.x = np.random.normal(0, 1)
+        p.y = np.random.normal(0, 1)
         p.num = i + 1 
         listePoint.append(p)
     # Retour de la liste de points
     return listePoint
 
 # Genere n point repartis de facon aleatoire avec la loi du Ginibre tronque dans l'intervale [0,size]²
-def genererGinibre(size,n):
-    # Genere la matrice de taille n x n remplis de nombre complexe aleatoire ( N(0,1) + N(0,1)i )
+def genererGinibre(n):
+    # Genere la matrice de taille n x n remplis de nombre complexe aleatoire suivant la loi normale( N(0,1) + N(0,1)i )
     M = np.zeros((n,n),dtype=complex)
     for i in range(0,n):
         for j in range(0,n):
@@ -116,8 +121,8 @@ def genererGinibre(size,n):
     listePoint = []
     for i in range(0,n):
         p = Vecteur()
-        p.x = int(vp[i].real / np.sqrt(n) * size / 4 + size / 2)
-        p.y = int(vp[i].imag / np.sqrt(n) * size / 4 + size / 2)
+        p.x = vp[i].real
+        p.y = vp[i].imag
         p.num = i + 1 
         listePoint.append(p)
     return listePoint
@@ -164,6 +169,8 @@ def signature(points):
                 if i + 1 != lpSorted[j].num :
                     mot = mot + " " + str(lpSorted[j].num)
             #mot += "\n"
+            if mot > minmot:
+                break
         if minmot > mot:
             minmot = mot
 
@@ -190,6 +197,14 @@ def signatureHull(points):
             firstSort[i].num = i + 1
         # On initialise le mot avec le 1er tri
         mot = ""
+
+        #################### LE PROBLEME VIENS D'ICI #########################
+        # Normalement le 1er points autour duquel on tourne devrait etre le 1er point 
+        #   dans notre tableau trie (firstsort) le probleme sera aussi present 
+        #   a chaque nouveau tri.
+        # Le resultat du print suivant devrait etre a b a b et non a b c d 
+        print(firstSort[0].x,firstSort[0].y,points[simplex[0]].x,points[simplex[0]].y)
+        ######################################################################
         #for j in range(0,len(firstSort)):
         #    if 1 != firstSort[j].num :
         #        mot = mot + " " + str(firstSort[j].num)
@@ -224,32 +239,28 @@ def listeToTab(points):
 # -------------------------------------------- Main --------------------------------------------------------- #
 
 # Taille des images
-size = 1000
+size = 100
 # Nombre de point a creer
 n = 5
 # Exemple de generation d'une image et de retour de signature 
-lp = genererGinibre(size,n)
+lp = genererGinibre(n)
 genererImage(size,lp,"Ginibre")
-print(signature(lp))
 print(signatureHull(lp))
 
 map = {}
-for i in range(0,10000) :
+for i in range(0,100) :
     if i%1000 == 0: 
         print(i)
-    lp = generer genererUniforme(size,n)
+    lp = genererGinibre(n)
+    genererImage(size,lp,"Ginibre")
     s = signatureHull(lp)
     if s in map :
         map[s] = map[s] + 1 
     else :
         map[s] = 1 
 
+print(len(map))
 print(map)
 #TODO 
-# 1. Signature : 
-#       - Calcul enveloppe convexe
-#       - Signature min choix 1 et 2 consecutif sur l'enveloppe convexe
-#       - Verifier la fonction 
-# 2. Faire des stats
-#       - Table de hachage 
-#       - Frequence d'apparition 
+# 1. Signature :
+#       - Corriger
