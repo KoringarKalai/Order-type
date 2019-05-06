@@ -213,6 +213,7 @@ def signature(points):
     # Initialisation du mot 
     minmot = "z"
 
+    # Pour chaque numerotation 12
     for i in range(0,len(points)):
         for j in range(0,len(points)):
             if i != j:
@@ -223,30 +224,24 @@ def signature(points):
                 # On les renumerote 
                 for k in range(0,len(points)):
                     firstSort[k].num = k + 1
-                
                 # On genere le mot 
-                for k in range(0,len(points)):
-                    centre = [firstSort[0] , firstSort[k]]
-                    points = triBulle(points, centre)
-                    for i in range(0,len(points)):
-                        points[i].num = i + 1
-                    # On initialise le mot 
-                    mot = ""
-                    # On cree le mot pour chaque point de depart 
-                    for i in range(0,len(points)):
-                        if i == 0 :
-                            centre = [points[0] , points[1]]
-                        else :
-                            centre = [points[i], points[0]]
-                        lpSorted = triBulle(points, centre)
-                        for j in range(0,len(lpSorted)):
-                            if i + 1 != lpSorted[j].num :
-                                mot = mot + " " + str(lpSorted[j].num)
-                        #mot += "\n"
-                        if mot > minmot:
-                            break
-                    if minmot > mot:
-                        minmot = mot
+                # On initialise le mot 
+                mot = ""
+                # On cree le mot pour chaque point de depart 
+                for i2 in range(0,len(points)):
+                    if i2 == 0 :
+                        centre = [firstSort[0] , firstSort[1]]
+                    else :
+                        centre = [firstSort[i2], firstSort[0]]
+                    lpSorted = triBulle(firstSort, centre)
+                    for j2 in range(0,len(lpSorted)):
+                        if i2 + 1 != lpSorted[j2].num :
+                            mot = mot + " " + str(lpSorted[j2].num)
+                    #mot += "\n"
+                    if mot > minmot:
+                        break
+                if minmot > mot:
+                    minmot = mot
     return minmot
     # Actual min 2 3 4 5 1 3 4 5 1 2 4 5 1 3 2 5 1 3 2 4
 
@@ -315,14 +310,14 @@ def listeToTab(points):
 # Taille des images
 size = 100
 # Nombre de point a creer
-n = 5
+n = 6
 # Exemple de generation d'une image et de retour de signature 
 lp = genererGinibre(n)
 genererImage(size,lp,"Ginibre")
 # print(signatureHull(lp))
 
 map = {}
-for i in range(0,1000) :
+for i in range(0,10000) :
     if i%1000 == 0: 
         print(i)
     lp = genererGinibre(n)
