@@ -5,6 +5,53 @@ import cv2
 class Vecteur:
     "Structure de vecteur"
 
+def test():
+    listePoint = []
+    p1 = Vecteur()
+    p1.x = 10
+    p1.y = 10
+    p1.num = 1
+    p2 = Vecteur()
+    p2.x = 90
+    p2.y = 10
+    p2.num = 2
+    p3 = Vecteur()
+    p3.x = 90
+    p3.y = 90
+    p3.num = 3
+    p4 = Vecteur()
+    p4.x = 10
+    p4.y = 90
+    p4.num = 4
+    p5 = Vecteur()
+    p5.x = 75
+    p5.y = 50
+    p5.num = 5
+    listePoint.append(p1)
+    listePoint.append(p2)
+    listePoint.append(p3)
+    listePoint.append(p4)
+    listePoint.append(p5)
+
+    print(comparaison(p1,p2,p1,p2))
+    print(comparaison(p1,p2,p2,p3))
+    print(comparaison(p1,p2,p3,p4))
+    print(comparaison(p1,p2,p4,p5))
+    print(comparaison(p1,p2,p2,p3))
+    print(comparaison(p1,p2,p3,p5))
+    print(comparaison(p1,p2,p3,p4))
+    print(comparaison(p1,p2,p5,p3))
+    print(comparaison(p1,p2,p3,p4))
+    print(comparaison(p1,p2,p3,p4))
+    centre = [p1,p2]
+    lps = triBulle(listePoint,centre)
+    image = np.zeros((100, 100, 3), np.uint8)
+    for i in range(0,len(listePoint)):
+        print(lps[i].num)
+        image[listePoint[i].x,listePoint[i].y] = [255, 255, 255]
+    cv2.imwrite("test.png", image)
+
+
 # Renvois le sens de rotation de a->b b->c c->a
 def orientation(a,b,c) :
     # Initialisation du vecteur AB 
@@ -27,6 +74,16 @@ def orientation(a,b,c) :
 
 # Compare l'angle de c et d autour de a en partant de c
 def comparaison(a,b,c,d):
+
+    if a.num == c.num :
+        return False
+    if a.num == d.num :
+        return True
+    if b.num == c.num :
+        return False
+    if b.num == d.num :
+        return True
+    
     # Calcul ordre de c et d autour de a en partant de b
     signeABC = orientation(a,b,c)
     signeABD = orientation(a,b,d)
@@ -34,44 +91,49 @@ def comparaison(a,b,c,d):
     if signeABC > 0:
         if signeABD > 0: 
             # ++ 
-            signeADB = orientation(a,d,b)
-            if signeADB > 0:
-                return True
-            else : 
+            signeACD = orientation(a,c,d)
+            if signeACD > 0:
                 return False
+            else : 
+                return True
         else: 
             # +- 
-            return True
+            return False
     else: 
         if signeABD > 0: 
             # -+ 
-            return False
+            return True
         else: 
             # -- 
-            signeADB = orientation(a,d,b)
-            if signeADB > 0:
-                return True
-            else : 
+            signeACD = orientation(a,c,d)
+            if signeACD > 0:
                 return False
+            else : 
+                return True
 
 # Renvois une copie de la liste triee par angle autour du point centrale en partant du second point donne
 def triBulle(points, centre):
     pts = points[:]
-    for i in range(len(pts)):
-        for j in range(i):
-            #compare les 2 pts
-            if comparaison(pts[j],pts[j+1], centre[0], centre[1]):
-                temp = pts[j]
-                pts[j] = pts[j+1]
-                pts[j+1] = temp
+    permutation = True
+    i = 0
+    while permutation == True:
+        permutation = False
+        i = i + 1
+        for j in range(0, len(pts) - i):
+            #compare les 2 pts (on echange si pts[j] > pts[j+1])
+            if comparaison(centre[0], centre[1], pts[j], pts[j+1]):
+                permutation = True
+                # On echange les deux elements
+                pts[j], pts[j + 1] = \
+                pts[j + 1],pts[j]
     return pts
 
 # Genere une image de taille size contenant les points de la liste points
 def genererImage(size, points, nom):
     pts = points[:]
     for i in range(0,len(points)):
-        pts[i].x = int(pts[i].x * size / len(points))
-        pts[i].y = int(pts[i].y * size / len(points))
+        pts[i].x = int(pts[i].x / np.sqrt(len(points)) * size/4 - size/2)
+        pts[i].y = int(pts[i].y / np.sqrt(len(points)) * size/4 - size/2)
     # Dessine une image noir de taille size
     image = np.zeros((size, size, 3), np.uint8)
     for i in range(0,len(pts)):
@@ -151,29 +213,40 @@ def signature(points):
     # Initialisation du mot 
     minmot = "z"
 
-    for k in range(0,len(points)):
-        centre = [points[k] , points[1]]
-        points = triBulle(points, centre)
-        for i in range(0,len(points)):
-            points[i].num = i + 1
-        # On initialise le mot 
-        mot = ""
-        # On cree le mot pour chaque point de depart 
-        for i in range(0,len(points)):
-            if i == 0 :
-                centre = [points[0] , points[1]]
-            else :
-                centre = [points[i], points[0]]
-            lpSorted = triBulle(points, centre)
-            for j in range(0,len(lpSorted)):
-                if i + 1 != lpSorted[j].num :
-                    mot = mot + " " + str(lpSorted[j].num)
-            #mot += "\n"
-            if mot > minmot:
-                break
-        if minmot > mot:
-            minmot = mot
-
+    for i in range(0,len(points)):
+        for j in range(0,len(points)):
+            if i != j:
+                # On recupere les deux premiers points du tableau 
+                centre = [points[i] , points[j]]
+                # On on effectue le trie par rapport a ces deux points 
+                firstSort = triBulle(points, centre)
+                # On les renumerote 
+                for k in range(0,len(points)):
+                    firstSort[k].num = k + 1
+                
+                # On genere le mot 
+                for k in range(0,len(points)):
+                    centre = [firstSort[0] , firstSort[k]]
+                    points = triBulle(points, centre)
+                    for i in range(0,len(points)):
+                        points[i].num = i + 1
+                    # On initialise le mot 
+                    mot = ""
+                    # On cree le mot pour chaque point de depart 
+                    for i in range(0,len(points)):
+                        if i == 0 :
+                            centre = [points[0] , points[1]]
+                        else :
+                            centre = [points[i], points[0]]
+                        lpSorted = triBulle(points, centre)
+                        for j in range(0,len(lpSorted)):
+                            if i + 1 != lpSorted[j].num :
+                                mot = mot + " " + str(lpSorted[j].num)
+                        #mot += "\n"
+                        if mot > minmot:
+                            break
+                    if minmot > mot:
+                        minmot = mot
     return minmot
     # Actual min 2 3 4 5 1 3 4 5 1 2 4 5 1 3 2 5 1 3 2 4
 
@@ -203,7 +276,8 @@ def signatureHull(points):
         #   dans notre tableau trie (firstsort) le probleme sera aussi present 
         #   a chaque nouveau tri.
         # Le resultat du print suivant devrait etre a b a b et non a b c d 
-        print(firstSort[0].x,firstSort[0].y,points[simplex[0]].x,points[simplex[0]].y)
+        if firstSort[0].x != centre[0].x or firstSort[0].y != centre[0].y:
+            print("Pas le bon point")
         ######################################################################
         #for j in range(0,len(firstSort)):
         #    if 1 != firstSort[j].num :
@@ -245,22 +319,26 @@ n = 5
 # Exemple de generation d'une image et de retour de signature 
 lp = genererGinibre(n)
 genererImage(size,lp,"Ginibre")
-print(signatureHull(lp))
+# print(signatureHull(lp))
 
 map = {}
-for i in range(0,100) :
+for i in range(0,1000) :
     if i%1000 == 0: 
         print(i)
     lp = genererGinibre(n)
-    genererImage(size,lp,"Ginibre")
-    s = signatureHull(lp)
+    # genererImage(size,lp,"Ginibre")
+    s = signature(lp)
     if s in map :
         map[s] = map[s] + 1 
     else :
         map[s] = 1 
 
-print(len(map))
+print("Nombre de signature differentes : ",len(map))
 print(map)
 #TODO 
 # 1. Signature :
 #       - Corriger
+
+# test()
+
+
