@@ -129,32 +129,58 @@ def triBulle(points, centre):
     return pts
 
 # Genere une image de taille size contenant les points de la liste points
-def genererImage(size, points, nom):
-    pts = points[:]
-    for i in range(0,len(points)):
-        pts[i].x = int(pts[i].x / np.sqrt(len(points)) * size/4 - size/2)
-        pts[i].y = int(pts[i].y / np.sqrt(len(points)) * size/4 - size/2)
+def genererImageGinibre(size, points, nom):
     # Dessine une image noir de taille size
     image = np.zeros((size, size, 3), np.uint8)
-    for i in range(0,len(pts)):
-        image[pts[i].x,pts[i].y] = [255, 255, 255]
+    for i in range(0,len(points)):
+        x = int(points[i].x / np.sqrt(len(points)) * size/8 - size/2)
+        y = int(points[i].y / np.sqrt(len(points)) * size/8 - size/2)
+        
+        image[x,y] = [255, 255, 255]
     cv2.imwrite(nom + ".png", image)
 
-# Genere n point repartis de facon aleatoire avec la loi uniforme dans l'intervale [0,size]²
+# Genere une image de taille size contenant les points de la liste points
+def genererImageUnif(size, points, nom):
+    # Dessine une image noir de taille size
+    image = np.zeros((size, size, 3), np.uint8)
+    for i in range(0,len(points)):
+        x = int(points[i].x * size/2 - size/2)
+        y = int(points[i].y * size/2 - size/2)
+        
+        image[x,y] = [255, 255, 255]
+    cv2.imwrite(nom + ".png", image)
+
+# Genere n point repartis de facon aleatoire avec la loi uniforme dans l'intervale [0,1]²
 def genererUniforme(n):
     # Liste des points 
     listePoint = []
     # Genere les n points 
     for i in range(0,n):
         p = Vecteur()
-        p.x = np.random.uniform(0, 1)
-        p.y = np.random.uniform(0, 1)
+        p.x = np.random.uniform(1, 2) - 1
+        p.y = np.random.uniform(1, 2) - 1 
         p.num = i + 1 
         listePoint.append(p)
     # Retour de la liste de points
     return listePoint
 
-# Genere n point repartis de facon aleatoire avec la loi normale dans l'intervale [0,size]²
+# Genere n point repartis de facon aleatoire avec la loi uniforme dans le cercle unitaire
+def genererUniformeCircle(n):
+    # Liste des points 
+    listePoint = []
+    # Genere les n points 
+    for i in range(0,n):
+        p = Vecteur()
+        length = np.sqrt(np.random.uniform(0, 1))
+        angle = np.pi * np.random.uniform(0, 2)
+        p.x = length * np.cos(angle)
+        p.y = length * np.sin(angle)
+        p.num = i + 1 
+        listePoint.append(p)
+    # Retour de la liste de points
+    return listePoint
+
+# Genere n point repartis de facon aleatoire avec la loi normale centree en 0 de variance 1
 def genererNormal(n):
     # Liste des points 
     listePoint = []
@@ -168,7 +194,7 @@ def genererNormal(n):
     # Retour de la liste de points
     return listePoint
 
-# Genere n point repartis de facon aleatoire avec la loi du Ginibre tronque dans l'intervale [0,size]²
+# Genere n point repartis de facon aleatoire avec la loi du Ginibre tronque dans l'intervale [0,sqrt(n)]²
 def genererGinibre(n):
     # Genere la matrice de taille n x n remplis de nombre complexe aleatoire suivant la loi normale( N(0,1) + N(0,1)i )
     M = np.zeros((n,n),dtype=complex)
@@ -236,14 +262,13 @@ def signature(points):
                     lpSorted = triBulle(firstSort, centre)
                     for j2 in range(0,len(lpSorted)):
                         if i2 + 1 != lpSorted[j2].num :
-                            mot = mot + " " + str(lpSorted[j2].num)
+                            mot = mot + "" + str(lpSorted[j2].num)
                     #mot += "\n"
                     if mot > minmot:
                         break
                 if minmot > mot:
                     minmot = mot
     return minmot
-    # Actual min 2 3 4 5 1 3 4 5 1 2 4 5 1 3 2 5 1 3 2 4
 
 # Retourne la signature minimale avec l'enveloppe convexe pour les choix de 1 et 2 
 def signatureHull(points):
@@ -265,31 +290,19 @@ def signatureHull(points):
             firstSort[i].num = i + 1
         # On initialise le mot avec le 1er tri
         mot = ""
-
-        #################### LE PROBLEME VIENS D'ICI #########################
-        # Normalement le 1er points autour duquel on tourne devrait etre le 1er point 
-        #   dans notre tableau trie (firstsort) le probleme sera aussi present 
-        #   a chaque nouveau tri.
-        # Le resultat du print suivant devrait etre a b a b et non a b c d 
-        if firstSort[0].x != centre[0].x or firstSort[0].y != centre[0].y:
-            print("Pas le bon point")
-        ######################################################################
-        #for j in range(0,len(firstSort)):
-        #    if 1 != firstSort[j].num :
-        #        mot = mot + " " + str(firstSort[j].num)
-        for i in range(1,len(points)):
-            # On recupere les deux points 
-            centre = [firstSort[i], points[simplex[0]]]
-            # On trie avec les deux points en centre 
-            lpSorted = triBulle(firstSort,centre)
-            # On ecrit la suite du mot 
-            for j in range(0,len(lpSorted)):
-                if i + 1 != lpSorted[j].num :
-                    mot = mot + " " + str(lpSorted[j].num)
-            # Si notre mot est deja moins bien que le plus petit mot on arrete de le calculer
-            if minmot < mot:
+        # On cree le mot pour chaque point de depart 
+        for i2 in range(0,len(points)):
+            if i2 == 0 :
+                centre = [firstSort[0] , firstSort[1]]
+            else :
+                centre = [firstSort[i2], firstSort[0]]
+            lpSorted = triBulle(firstSort, centre)
+            for j2 in range(0,len(lpSorted)):
+                if i2 + 1 != lpSorted[j2].num :
+                    mot = mot + " " + str(lpSorted[j2].num)
+            #mot += "\n"
+            if mot > minmot:
                 break
-        # On test si le mot est le plus petit 
         if minmot > mot:
             minmot = mot
     return minmot
@@ -310,30 +323,43 @@ def listeToTab(points):
 # Taille des images
 size = 100
 # Nombre de point a creer
-n = 6
+n = 5
 # Exemple de generation d'une image et de retour de signature 
-lp = genererGinibre(n)
-genererImage(size,lp,"Ginibre")
-# print(signatureHull(lp))
+lp = genererUniformeCircle(n)
+genererImageUnif(size,lp,"UnifCircle")
+# print(signature(lp))
 
-map = {}
-for i in range(0,10000) :
+mapUniforme = {}
+mapGinibre = {}
+for i in range(0,100000) :
     if i%1000 == 0: 
         print(i)
+        print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
+        print(mapUniforme)
+        print("GINIBRE : Nombre de signature differentes : ",len(mapGinibre))
+        print(mapGinibre)
+
+    # ----------------------------------- STATS GINIBRE ------------------------------------ #
     lp = genererGinibre(n)
-    # genererImage(size,lp,"Ginibre")
+    # genererImageGinibre(size,lp,"Ginibre")
     s = signature(lp)
-    if s in map :
-        map[s] = map[s] + 1 
+    if s in mapGinibre :
+        mapGinibre[s] = mapGinibre[s] + 1 
     else :
-        map[s] = 1 
+        mapGinibre[s] = 1 
+        genererImageGinibre(size,lp,s)
+    # ----------------------------------- STATS UNIFORM ------------------------------------ #
+    lp = genererUniformeCircle(n)
+    # genererImageGinibre(size,lp,"Ginibre")
+    s = signature(lp)
+    if s in mapUniforme :
+        mapUniforme[s] = mapUniforme[s] + 1 
+    else :
+        mapUniforme[s] = 1 
+        genererImageUnif(size,lp,s)
 
-print("Nombre de signature differentes : ",len(map))
-print(map)
-#TODO 
-# 1. Signature :
-#       - Corriger
-
-# test()
-
+print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
+print(mapUniforme)
+print("GINIBRE : Nombre de signature differentes : ",len(mapGinibre))
+print(mapGinibre)
 
