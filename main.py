@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import spatial
 import cv2
+import operator
 
 class Vecteur:
     "Structure de vecteur"
@@ -51,19 +52,19 @@ def test():
         image[listePoint[i].x,listePoint[i].y] = [255, 255, 255]
     cv2.imwrite("test.png", image)
 
-def readFile():
-    with open("otypes07.b08", 'rb') as f:
-        listeOrderType7 = []
-        for typeOrdre in range(0,135):
+def readFile(fileName, nbPoints, nbTypesAttendu):
+    with open(fileName, 'rb') as f:
+        listeOrderType = []
+        for typeOrdre in range(0,nbTypesAttendu):
             points = []
-            for point in range(0,7):
+            for point in range(0,nbPoints):
                 p = Vecteur()
                 p.x = int.from_bytes(f.read(1), byteorder='big')
                 p.y = int.from_bytes(f.read(1), byteorder='big')
                 p.num = point + 1
                 points.append(p)
-            listeOrderType7.append(points)
-        return listeOrderType7
+            listeOrderType.append(points)
+        return listeOrderType
 
 # Renvois le sens de rotation de a->b b->c c->a
 def orientation(a,b,c) :
@@ -355,7 +356,7 @@ genererImageUnif(size,lp,"UnifCircle")
 
 mapUniforme = {}
 mapGinibre = {}
-for i in range(0,0000) :
+for i in range(0,000) :
     if i%100 == 0: 
         print(i)
         print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
@@ -382,22 +383,26 @@ for i in range(0,0000) :
         mapUniforme[s] = 1
         #genererImageUnif(size,lp,s)
 
+mapUniforme = sorted(mapUniforme.items(), reverse=True, key=operator.itemgetter(1))
+mapGinibre = sorted(mapGinibre.items(), reverse=True, key=operator.itemgetter(1))
 print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
 print(mapUniforme)
 print("GINIBRE : Nombre de signature differentes : ",len(mapGinibre))
 print(mapGinibre)
 
 mapTest = {}
-listeOrderType7 = readFile()
-for ot in range(0,len(listeOrderType7)):
-    s = signature(listeOrderType7[ot])
+listeOrderType = readFile("otypes06.b08",6,16)
+#listeOrderType = readFile("otypes07.b08",7,135)
+#listeOrderType = readFile("otypes08.b08",8,3315)
+for ot in range(0,len(listeOrderType)):
+    s = signature(listeOrderType[ot])
     if s in mapTest :
         mapTest[s] = mapTest[s] + 1 
         name = s + "(" + str(mapTest[s]) + ")"
-        #genererImageTest(listeOrderType7[ot], name)
+        #genererImageTest(listeOrderType[ot], name)
     else :
         mapTest[s] = 1 
-        #genererImageTest(listeOrderType7[ot], s)
+        #genererImageTest(listeOrderType[ot], s)
 
 print("TEST : Nombre de signature differentes : ",len(mapTest))
 #print(mapTest)
