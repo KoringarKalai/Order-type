@@ -51,6 +51,19 @@ def test():
         image[listePoint[i].x,listePoint[i].y] = [255, 255, 255]
     cv2.imwrite("test.png", image)
 
+def readFile():
+    with open("otypes07.b08", 'rb') as f:
+        listeOrderType7 = []
+        for typeOrdre in range(0,135):
+            points = []
+            for point in range(0,7):
+                p = Vecteur()
+                p.x = int.from_bytes(f.read(1), byteorder='big')
+                p.y = int.from_bytes(f.read(1), byteorder='big')
+                p.num = point + 1
+                points.append(p)
+            listeOrderType7.append(points)
+        return listeOrderType7
 
 # Renvois le sens de rotation de a->b b->c c->a
 def orientation(a,b,c) :
@@ -150,6 +163,17 @@ def genererImageUnif(size, points, nom):
         image[x,y] = [255, 255, 255]
     cv2.imwrite(nom + ".png", image)
 
+# Genere une image de taille size contenant les points de la liste points
+def genererImageTest(points, nom):
+    # Dessine une image noir de taille size
+    image = np.zeros((300, 300, 3), np.uint8)
+    for i in range(0,len(points)):
+        x = int(points[i].x)
+        y = int(points[i].y)
+        
+        image[x,y] = [255, 255, 255]
+    cv2.imwrite(nom + ".png", image)
+
 # Genere n point repartis de facon aleatoire avec la loi uniforme dans l'intervale [0,1]²
 def genererUniforme(n):
     # Liste des points 
@@ -240,11 +264,11 @@ def signature(points):
     minmot = "z"
 
     # Pour chaque numerotation 12
-    for i in range(0,len(points)):
-        for j in range(0,len(points)):
-            if i != j:
+    for p1 in range(0,len(points)):
+        for p2 in range(0,len(points)):
+            if p1 != p2:
                 # On recupere les deux premiers points du tableau 
-                centre = [points[i] , points[j]]
+                centre = [points[p1] , points[p2]]
                 # On on effectue le trie par rapport a ces deux points 
                 firstSort = triBulle(points, centre)
                 # On les renumerote 
@@ -254,15 +278,15 @@ def signature(points):
                 # On initialise le mot 
                 mot = ""
                 # On cree le mot pour chaque point de depart 
-                for i2 in range(0,len(points)):
-                    if i2 == 0 :
+                for i in range(0,len(points)):
+                    if i == 0 :
                         centre = [firstSort[0] , firstSort[1]]
                     else :
-                        centre = [firstSort[i2], firstSort[0]]
+                        centre = [firstSort[i], firstSort[0]]
                     lpSorted = triBulle(firstSort, centre)
-                    for j2 in range(0,len(lpSorted)):
-                        if i2 + 1 != lpSorted[j2].num :
-                            mot = mot + "" + str(lpSorted[j2].num)
+                    for j in range(0,len(lpSorted)):
+                        if i + 1 != lpSorted[j].num :
+                            mot = mot + str(lpSorted[j].num)
                     #mot += "\n"
                     if mot > minmot:
                         break
@@ -323,7 +347,7 @@ def listeToTab(points):
 # Taille des images
 size = 100
 # Nombre de point a creer
-n = 5
+n = 7
 # Exemple de generation d'une image et de retour de signature 
 lp = genererUniformeCircle(n)
 genererImageUnif(size,lp,"UnifCircle")
@@ -331,13 +355,13 @@ genererImageUnif(size,lp,"UnifCircle")
 
 mapUniforme = {}
 mapGinibre = {}
-for i in range(0,100000) :
-    if i%1000 == 0: 
+for i in range(0,0000) :
+    if i%100 == 0: 
         print(i)
         print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
-        print(mapUniforme)
+        #print(mapUniforme)
         print("GINIBRE : Nombre de signature differentes : ",len(mapGinibre))
-        print(mapGinibre)
+        #print(mapGinibre)
 
     # ----------------------------------- STATS GINIBRE ------------------------------------ #
     lp = genererGinibre(n)
@@ -347,7 +371,7 @@ for i in range(0,100000) :
         mapGinibre[s] = mapGinibre[s] + 1 
     else :
         mapGinibre[s] = 1 
-        genererImageGinibre(size,lp,s)
+        #genererImageGinibre(size,lp,s)
     # ----------------------------------- STATS UNIFORM ------------------------------------ #
     lp = genererUniformeCircle(n)
     # genererImageGinibre(size,lp,"Ginibre")
@@ -355,11 +379,25 @@ for i in range(0,100000) :
     if s in mapUniforme :
         mapUniforme[s] = mapUniforme[s] + 1 
     else :
-        mapUniforme[s] = 1 
-        genererImageUnif(size,lp,s)
+        mapUniforme[s] = 1
+        #genererImageUnif(size,lp,s)
 
 print("UNIFORME : Nombre de signature differentes : ",len(mapUniforme))
 print(mapUniforme)
 print("GINIBRE : Nombre de signature differentes : ",len(mapGinibre))
 print(mapGinibre)
 
+mapTest = {}
+listeOrderType7 = readFile()
+for ot in range(0,len(listeOrderType7)):
+    s = signature(listeOrderType7[ot])
+    if s in mapTest :
+        mapTest[s] = mapTest[s] + 1 
+        name = s + "(" + str(mapTest[s]) + ")"
+        #genererImageTest(listeOrderType7[ot], name)
+    else :
+        mapTest[s] = 1 
+        #genererImageTest(listeOrderType7[ot], s)
+
+print("TEST : Nombre de signature differentes : ",len(mapTest))
+#print(mapTest)
